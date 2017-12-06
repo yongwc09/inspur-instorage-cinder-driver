@@ -4,14 +4,14 @@ INSPUR G2 Cinder J2N 驱动使用说明
 
 Juno版本到Newton版本OpenStack驱动部分变化影响
 ---------------------------------------------
-Juno -> kilo
+- Juno -> kilo
 	1. 公共包由openstack内部移到了外部维护，因此juno版本需要使用内部的，从kilo版本开始需要使用外部的包
-Kilo -> Liberty
+- Kilo -> Liberty
 	1. opt.min opt.max选项支持
 	2. san.SanDriver继承关系修改。 但是对存储驱动影响不大
 	3. create_export函数增加了connector参数
-Liberty -> Mitaka
-Mitaka -> Newton
+- Liberty -> Mitaka
+- Mitaka -> Newton
 
 使用说明
 --------
