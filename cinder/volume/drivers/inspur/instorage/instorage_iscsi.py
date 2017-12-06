@@ -41,7 +41,7 @@ we must:
    (in theproper I/O group)
 
 """
-DRIVER_RUN_VERSION = 'JUNO'
+DRIVER_RUN_VERSION = 'KLMN'
 
 # TODO !!!ATTENTION
 # the openstack common package is move out from project
