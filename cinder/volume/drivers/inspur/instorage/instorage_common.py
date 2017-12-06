@@ -55,9 +55,9 @@ from cinder.i18n import _
 from cinder import ssh_utils
 from cinder import utils as cinder_utils
 from cinder.volume import driver
-from cinder.volume.drivers.inspur import (
+from cinder.volume.drivers.inspur.instorage import (
     replication as instorage_rep)
-from cinder.volume.drivers.inspur import instorage_const
+from cinder.volume.drivers.inspur.instorage import instorage_const
 from cinder.volume.drivers.san import san
 from cinder.volume import qos_specs
 from cinder.volume import utils
@@ -136,9 +136,11 @@ CONF.register_opts(instorage_mcs_opts)
 
 
 # TODO !!! ATTENTION
-# in Juno san.SanDriver inherited from driver.VolumeDriver
+# in Juno san.SanDriver inherited from driver.VolumeDriver, however, dure to
+# the inheriate problem, we need first inheriate from san.SanDriver, and then
+# from driver.VolumeDriver
 # from K to P, CommonDriver need inherit from both VolumeDriver and SanDriver
-class InStorageMCSCommonDriver(driver.VolumeDriver, san.SanDriver):
+class InStorageMCSCommonDriver(san.SanDriver, driver.VolumeDriver):
     """Inspur InStorage MCS abstract base class for iSCSI/FC volume drivers.
 
     Version history:
@@ -425,7 +427,10 @@ class InStorageMCSCommonDriver(driver.VolumeDriver, san.SanDriver):
             LOG.error(_('ensure_export: Volume %s not found on storage.'),
                       volume['name'])
 
-    def create_export(self, ctxt, volume, connector):
+    # ATTENTION the signature of create_export change from L, which add
+    # the connector argument, we set it to None as default so that J, K
+    # can also use it
+    def create_export(self, ctxt, volume, connector=None):
         pass
 
     def remove_export(self, ctxt, volume):

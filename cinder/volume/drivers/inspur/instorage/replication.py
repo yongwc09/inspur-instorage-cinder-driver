@@ -37,7 +37,7 @@ from cinder import exception
 from cinder.i18n import _
 from cinder import ssh_utils
 from cinder import utils as cinder_utils
-from cinder.volume.drivers.inspur import instorage_const
+from cinder.volume.drivers.inspur.instorage import instorage_const
 from cinder.volume import volume_types
 
 LOG = logging.getLogger(__name__)

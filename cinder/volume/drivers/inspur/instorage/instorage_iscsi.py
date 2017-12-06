@@ -66,7 +66,7 @@ from cinder import exception
 from cinder.i18n import _
 from cinder.volume import driver
 
-from cinder.volume.drivers.inspur import instorage_common
+from cinder.volume.drivers.inspur.instorage import instorage_common
 
 LOG = logging.getLogger(__name__)
 
