@@ -147,7 +147,7 @@ class InStorageMCSISCSIDriver(instorage_common.InStorageMCSCommonDriver,
             LOG.warning(_('CHAP secret exists for host but CHAP is '
                           'disabled.'))
 
-        lun_id = self._assistant.map_vol_to_host(volume_name, host_name, False)
+        lun_id = self._assistant.map_vol_to_host(volume_name, host_name, True)
 
         try:
             properties = self._get_single_iscsi_data(volume, connector,

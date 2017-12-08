@@ -125,7 +125,7 @@ class InStorageMCSFCDriver(instorage_common.InStorageMCSCommonDriver,
             LOG.error(msg)
             raise exception.VolumeDriverException(message=msg)
 
-        lun_id = self._assistant.map_vol_to_host(volume_name, host_name, False)
+        lun_id = self._assistant.map_vol_to_host(volume_name, host_name, True)
         try:
             preferred_node = volume_attributes['preferred_node_id']
             IO_group = volume_attributes['IO_group_id']
