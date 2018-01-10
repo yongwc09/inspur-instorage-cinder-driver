@@ -131,6 +131,12 @@ class InStorageMCSISCSIDriver(instorage_common.InStorageMCSCommonDriver,
         """Perform necessary work to make an iSCSI connection."""
         LOG.debug('enter: initialize_connection: volume %(vol)s with connector'
                   ' %(conn)s', {'vol': volume['id'], 'conn': connector})
+
+        # get host according to iSCSI protocol
+        connector = connector.copy()
+        connector.pop('wwpns', None)
+        connector.pop('wwnns', None)
+
         volume_name = self._get_target_vol(volume)
 
         # Check if a host object is defined for this host name
@@ -315,6 +321,10 @@ class InStorageMCSISCSIDriver(instorage_common.InStorageMCSCommonDriver,
         info = {}
         if 'host' in connector:
             # get host according to iSCSI protocol
+            connector = connector.copy()
+            connector.pop('wwpns', None)
+            connector.pop('wwnns', None)
+
             info = {'driver_volume_type': 'iscsi',
                     'data': {}}
 

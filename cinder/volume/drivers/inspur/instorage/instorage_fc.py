@@ -120,6 +120,11 @@ class InStorageMCSFCDriver(instorage_common.InStorageMCSCommonDriver,
         """
         LOG.debug('enter: initialize_connection: volume %(vol)s with connector'
                   ' %(conn)s', {'vol': volume['id'], 'conn': connector})
+
+        # get host according to FC protocol
+        connector = connector.copy()
+        connector.pop('initiator', None)
+
         volume_name = self._get_target_vol(volume)
 
         # Check if a host object is defined for this host name
