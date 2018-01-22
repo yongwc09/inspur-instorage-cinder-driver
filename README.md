@@ -63,6 +63,8 @@ Juno版本到Newton版本OpenStack驱动部分变化影响
    instorage_mcs_volpool_name = Pool0
    #后端名称
    volume_backend_name = INSTORAGE
+   #拷贝镜像启用多路径
+   #use_multipath_for_image_xfer = True
 
    [INSTORAGE]
    #iSCSI连接驱动
@@ -77,7 +79,23 @@ Juno版本到Newton版本OpenStack驱动部分变化影响
    instorage_mcs_volpool_name = Pool0
    #后端名称
    volume_backend_name = INSTORAGE
+   #拷贝镜像启用多路径
+   #use_multipath_for_image_xfer = True
    ```
+
+   卷映射如需启用多路径，需要在nova.conf配置中增加如下配置
+   ```
+   [libvirt]
+   iscsi_use_multipath = True
+   ```
+
+   同时multipath.conf配置文件中需要将user_friendly_names选项设置为no 
+   ```
+   defaults {
+      user_friendly_names no
+   }
+   ```
+
 4. 在OpenStack环境中增加卷类型
    ```
    cinder type-create inspur
