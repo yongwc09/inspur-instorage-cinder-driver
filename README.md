@@ -86,8 +86,14 @@ Juno版本到Newton版本OpenStack驱动部分变化影响
    卷映射如需启用多路径，需要在nova.conf配置中增加如下配置
    ```
    [libvirt]
+   volume_use_multipath = True
+   ```
+   或
+   ```
+   [libvirt]
    iscsi_use_multipath = True
    ```
+   具体参数请参考OpenStack手册，不同版本使用的参数不一样。
 
    同时multipath.conf配置文件中需要将user_friendly_names选项设置为no 
    ```
