@@ -19,6 +19,12 @@ Juno版本到Newton版本OpenStack驱动部分变化影响
 使用说明
 --------
 本驱动包中定义了DRIVER_RUN_VERSION来设定当前驱动的运行OpenStack版本。以此作为依据确定驱动包中的条件选择。
+可以通过执行mkpackage.sh来生成指定版本的包。
+   ```
+   #进入mkpacage.sh所在目录，参数为指定版本首字母。如生成Ocata版本驱动。
+   ./mkpackage.sh o
+   #执行完毕后，会在所在目录生成G2_OCATA_cinder目录，包含了相应的驱动。
+   ```
 
 安装与使用该驱动
 ----------------
@@ -100,6 +106,11 @@ Juno版本到Newton版本OpenStack驱动部分变化影响
    defaults {
       user_friendly_names no
    }
+   ```
+
+   针对G2存储，不同版本的主机系统多路径配置需要进行适当的优化，使得G2存储可以更好的支持多路径。g2mpiocfg.sh工具可以自动的识别操作系统，并对/etc/multipath.conf文件进行优化，增加G2存储的device部分。
+   ```
+   ./g2mpiocfg.sh
    ```
 
 4. 在OpenStack环境中增加卷类型
