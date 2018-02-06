@@ -20,7 +20,10 @@ import re
 import time
 import unicodedata
 
-DRIVER_RUN_VERSION = 'KLMN' # from K to N
+# TODO !!!ATTENTION
+# should first change @RUN_VERSION@ to the specified OpenStack version so that
+# can be used
+DRIVER_RUN_VERSION = '@RUN_VERSION@'
 
 # TODO !!!ATTENTION
 # the openstack common package is move out from project

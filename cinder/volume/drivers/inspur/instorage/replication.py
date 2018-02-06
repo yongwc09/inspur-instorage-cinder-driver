@@ -16,7 +16,7 @@
 
 import random
 
-DRIVER_RUN_VERSION = 'KLMN'
+DRIVER_RUN_VERSION = '@RUN_VERSION@'
 
 # TODO !!!ATTENTION
 # the openstack common package is move out from project
