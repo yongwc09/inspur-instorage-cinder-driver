@@ -1,8 +1,8 @@
-INSPUR G2 Cinder J2N 驱动使用说明
+INSPUR G2 Cinder 驱动使用说明
 =================================
-本驱动包实现了从Juno版本到Newton版本G2存储的支持。
+本驱动包实现了从Juno版本到Queens版本G2存储的支持。
 
-Juno版本到Newton版本OpenStack驱动部分变化影响
+Juno版本到Queens版本OpenStack驱动部分变化影响
 ---------------------------------------------
 - Juno -> kilo
 	1. 公共包由openstack内部移到了外部维护，因此juno版本需要使用内部的，从kilo版本开始需要使用外部的包
@@ -19,36 +19,46 @@ Juno版本到Newton版本OpenStack驱动部分变化影响
 使用说明
 --------
 本驱动包中定义了DRIVER_RUN_VERSION来设定当前驱动的运行OpenStack版本。以此作为依据确定驱动包中的条件选择。
-可以通过执行mkpackage.sh来生成指定版本的包。
+可以利用 mkpackage.sh 工具来生成指定版本的包。
+   - 可以通过 -h 参数获取 mkpackage.sh 得帮助信息
    ```
-   #进入mkpacage.sh所在目录，参数为指定版本首字母。如生成Ocata版本驱动。
-   ./mkpackage.sh o
-   #执行完毕后，会在所在目录生成G2_OCATA_cinder目录，包含了相应的驱动。
+   ci@devstack-32:~/Cinder_V4.0.0.Build20180228$ ./mkpackage.sh -h
+   Usage: ./mkpackage.sh [-h | -v | -t [j|k|l|m|o|p|q]]
+
+   A tool to generate the package of inspur instorage cinder driver for specify Openstack version
+
+   Options:
+       -h    show this help
+       -v    show the version
+       -t V  specify the openstack version which
+             we want generate package for, now we
+             support version j k l m n o p q
    ```
+   - 可以通过 -t 参数指定OpenStack目标版本
+   ```
+   ci@devstack-32:~/Cinder_V4.0.0.Build20180228$ ./mkpackage.sh -t o
+   Generate Package for OpenStack version OCATA
+
+   ci@devstack-32:~/Cinder_V4.0.0.Build20180228$ ls
+   cinder  g2mpiocfg.sh  G2_OCATA_cinder  mkpackage.sh  README.md
+   ```
+   其中 G2_OCATA_cinder 即为目标OpenStack版本的驱动文件。将目录中驱动文件拷贝到指定位置即可。
 
 安装与使用该驱动
 ----------------
-1. 将驱动包放置到Cinder服务的目录中
+1. 执行 ./mkpackage.sh -t X 生成X版本OpenStack对应的驱动包。X 为 OpenStack 对应版本首字母。
    ```
-   cp -rf cinder/volume/drivers/inspur [PATH/TO/CINDER]/volume/drivers
+   ./mkpackage.sh -t X
    ```
-2. 从Mitaka版本开始需要将opts.py文件中的inspur模块导入部分同步到cinder/opts.py文件中
-   导入部分增加如下模块导入命令
+2. 将生成驱动包中的inspur目录放置到cinder服务安装目录的驱动插件目录下.
    ```
-       from cinder.volume.drivers.inspur.instorage import instorage_common as \
-           cinder_volume_drivers_inspur_instorage_instoragecommon
-       from cinder.volume.drivers.inspur.instorage import instorage_iscsi as \
-           cinder_volume_drivers_inspur_instorage_instorageiscsi
+   cp -rf G2_XXX_cinder/inspur [PATH/TO/CINDER]/volume/drivers
    ```
-   注册部分增加
+3. 从Mitaka版本开始, Cinder服务中增加了opts.py文件，该文件包含了配置参数相关的处理。需要使用驱动包中的opts.py文件替换cinder服务安装目录的opts.py文件中
    ```
-       cinder_volume_drivers_inspur_instorage_instoragecommon.
-       instorage_mcs_opts,
-       cinder_volume_drivers_inspur_instorage_instorageiscsi.
-       instorage_mcs_iscsi_opts,
+   cp -rf G2_XXX_cinder/opts.py [PATH/TO/CINDER]/opts.py
    ```
-   具体可以通过对比原系统中opts.py文件与本包中opts.py文件来确定
-3. 修改Cinder服务配置文件
+4. 修改Cinder服务配置文件
 
    ```
    #修改enable_backends配置,增加INSTORAGE
@@ -113,7 +123,7 @@ Juno版本到Newton版本OpenStack驱动部分变化影响
    ./g2mpiocfg.sh
    ```
 
-4. 在OpenStack环境中增加卷类型
+5. 在OpenStack环境中增加卷类型
    ```
    cinder type-create inspur
 
