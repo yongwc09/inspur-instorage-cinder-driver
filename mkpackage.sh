@@ -75,8 +75,8 @@ done
 
 echo "Generate Package for OpenStack version ${OS_VERSION}"
 
-# package name is G2_VERSION_cinder
-PACKAGE_NAME=G2_${OS_VERSION}_cinder
+# package name is InStorage_VERSION_cinder
+PACKAGE_NAME=InStorage_${OS_VERSION}_cinder
 
 # create the directory
 mkdir $PACKAGE_NAME

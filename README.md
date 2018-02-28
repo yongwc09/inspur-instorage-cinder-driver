@@ -1,6 +1,6 @@
-INSPUR G2 Cinder 驱动使用说明
+INSPUR InStorage Cinder 驱动使用说明
 =================================
-本驱动包实现了从Juno版本到Queens版本对G2存储的支持。
+本驱动包实现了从Juno版本到Queens版本对 InStorage 存储的支持。
 
 Juno版本到Queens版本OpenStack驱动部分变化影响
 ---------------------------------------------
@@ -40,9 +40,9 @@ Juno版本到Queens版本OpenStack驱动部分变化影响
    Generate Package for OpenStack version OCATA
 
    ci@devstack-32:~/Cinder_V4.0.0.Build20180228$ ls
-   cinder  g2mpiocfg.sh  G2_OCATA_cinder  mkpackage.sh  README.md
+   cinder  g2mpiocfg.sh  InStorage_OCATA_cinder  mkpackage.sh  README.md
    ```
-   其中 G2_OCATA_cinder 即为目标OpenStack版本对应的G2驱动文件包。将目录中驱动文件拷贝到指定位置即可。
+   其中 InStorage_OCATA_cinder 即为目标OpenStack版本对应的InStorage驱动文件包。将目录中驱动文件拷贝到指定位置即可。
 
 安装与使用该驱动
 ----------------
@@ -52,11 +52,11 @@ Juno版本到Queens版本OpenStack驱动部分变化影响
    ```
 2. 将生成驱动包中的inspur目录放置到cinder服务安装目录的驱动插件目录下.
    ```
-   cp -rf G2_XXX_cinder/inspur [PATH/TO/CINDER]/volume/drivers
+   cp -rf InStorage_XXX_cinder/inspur [PATH/TO/CINDER]/volume/drivers
    ```
 3. 从Mitaka版本开始, Cinder服务中增加了opts.py文件，该文件包含了配置参数相关的处理。需要使用驱动包中的opts.py文件替换cinder服务安装目录的opts.py文件中
    ```
-   cp -rf G2_XXX_cinder/opts.py [PATH/TO/CINDER]/opts.py
+   cp -rf InStorage_XXX_cinder/opts.py [PATH/TO/CINDER]/opts.py
    ```
 4. 修改相关服务配置文件(所有配置改动均需要重启对应服务来使的新配置生效)
 
@@ -120,7 +120,7 @@ Juno版本到Queens版本OpenStack驱动部分变化影响
       }
       ```
 
-      针对G2存储，不同版本的主机系统多路径配置需要进行适当的优化，使得G2存储可以更好的支持多路径。g2mpiocfg.sh工具可以自动的识别操作系统，并对/etc/multipath.conf文件进行优化，增加G2存储的device部分。
+      针对 InStorage 存储，不同版本的主机系统多路径配置需要进行适当的优化，使得InStorage存储可以更好的支持多路径。g2mpiocfg.sh工具可以自动的识别操作系统，并对/etc/multipath.conf文件进行优化，增加InStorage存储的device部分。
       ```
       ./g2mpiocfg.sh
       ```
