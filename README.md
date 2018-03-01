@@ -40,7 +40,7 @@ Juno版本到Queens版本OpenStack驱动部分变化影响
    Generate Package for OpenStack version OCATA
 
    ci@devstack-32:~/Cinder_V4.0.0.Build20180228$ ls
-   cinder  g2mpiocfg.sh  InStorage_OCATA_cinder  mkpackage.sh  README.md
+   cinder  instorage_mpio_cfg.sh  InStorage_OCATA_cinder  mkpackage.sh  README.md
    ```
    其中 InStorage_OCATA_cinder 即为目标OpenStack版本对应的InStorage驱动文件包。将目录中驱动文件拷贝到指定位置即可。
 
@@ -120,9 +120,9 @@ Juno版本到Queens版本OpenStack驱动部分变化影响
       }
       ```
 
-      针对 InStorage 存储，不同版本的主机系统多路径配置需要进行适当的优化，使得InStorage存储可以更好的支持多路径。g2mpiocfg.sh工具可以自动的识别操作系统，并对/etc/multipath.conf文件进行优化，增加InStorage存储的device部分。
+      针对 InStorage 存储，不同版本的主机系统多路径配置需要进行适当的优化，使得InStorage存储可以更好的支持多路径. instorage_mpio_cfg.sh 工具可以自动的识别操作系统，并对/etc/multipath.conf文件进行优化，增加InStorage存储的device部分。
       ```
-      ./g2mpiocfg.sh
+      ./instorage_mpio_cfg.sh
       ```
 
 5. 在OpenStack环境中增加卷类型
