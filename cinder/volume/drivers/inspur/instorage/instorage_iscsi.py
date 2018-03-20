@@ -51,13 +51,16 @@ if DRIVER_RUN_VERSION <= 'JUNO':
 
     from cinder.openstack.common import log as logging
     from cinder.openstack.common import excutils
-
-    from cinder import utils as coordination
 else:
     from oslo_config import cfg
     from oslo_log import log as logging
     from oslo_utils import excutils
 
+# TODO !!!ATTENTION
+# from Mitaka, lock from coordination is used instead of utils
+if DRIVER_RUN_VERSION <= 'LIBERTY':
+    from cinder import utils as coordination
+else:
     from cinder import coordination
 
 import six
