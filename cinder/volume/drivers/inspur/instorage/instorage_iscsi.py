@@ -146,7 +146,8 @@ class InStorageMCSISCSIDriver(instorage_common.InStorageMCSCommonDriver,
         host_name = self._assistant.get_host_from_connector(connector)
         if host_name is None:
             # Host does not exist - add a new host to InStorage/MCS
-            host_name = self._assistant.create_host(connector)
+            host_name = self._assistant.create_host(connector,
+                                                    self.get_site_name())
 
         chap_secret = self._assistant.get_chap_secret_for_host(host_name)
         chap_enabled = self.configuration.instorage_mcs_iscsi_chap_enabled
@@ -272,10 +273,15 @@ class InStorageMCSISCSIDriver(instorage_common.InStorageMCSCommonDriver,
             LOG.exception(msg)
             raise exception.VolumeBackendAPIException(data=msg)
 
+        volume_name = self._get_target_vol(volume)
+        io_groups = self._assistant.get_volume_iogrps(volume_name)
+
         properties['target_iqns'] = []
         properties['target_portals'] = []
         properties['target_luns'] = []
         for node in self._state['storage_nodes'].values():
+            if node['IO_group'] not in io_groups:
+                continue
             for ip_data in resp:
                 if ip_data['node_id'] != node['id']:
                     continue

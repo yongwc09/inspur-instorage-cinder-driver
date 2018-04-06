@@ -132,6 +132,23 @@ instorage_mcs_opts = [
                 default=['volpool'],
                 help='Comma separated list of storage system storage '
                      'pools for volumes.'),
+    cfg.BoolOpt('instorage_mcs_enable_aa',
+                default=False,
+                help='Create active-active volume when do volume create'),
+    cfg.ListOpt('instorage_mcs_aa_volpool_name_map',
+                default=None,
+                help='Comma separated list of storage system storage '
+                     'pools map for active-active volumes. Each item is '
+                     'a base pool to second pool map, seperated by :, '
+                     'like Pool0:Pool1, and Pool0 should be a argument to '
+                     'instorage_mcs_volpool_name'),
+    cfg.ListOpt('instorage_mcs_aa_iogrp_map',
+                default=None,
+                help='Comma separated list of storage system I/O group '
+                     'map for active-active volumes. Each item is '
+                     'a base iogrp to second iogrp map, seperated by :, '
+                     'like iogrp0:iogrp1, and iogrp0 should be a argument to '
+                     'instorage_mcs_vol_iogrp'),
 ]
 
 CONF = cfg.CONF
@@ -163,7 +180,28 @@ class InStorageMCSCommonDriver(san.SanDriver, driver.VolumeDriver):
         self._backend_name = self.configuration.safe_get('volume_backend_name')
         self.active_ip = self.configuration.san_ip
         self.inactive_ip = self.configuration.instorage_san_secondary_ip
-        self._local_backend_assistant = InStorageAssistant(self._run_ssh)
+
+        self.active_active_pool_map = {}
+        pool_maps = self.configuration.instorage_mcs_aa_volpool_name_map
+        if pool_maps:
+            for pool_map in pool_maps:
+                primary, second = tuple(pool_map.split(':'))
+                self.active_active_pool_map[primary] = second
+            LOG.debug("aa pool map: %s", self.active_active_pool_map)
+
+        self.active_active_iogrp_map = {}
+        iogrp_maps = self.configuration.instorage_mcs_aa_iogrp_map
+        if iogrp_maps:
+            for iogrp_map in iogrp_maps:
+                primary, second = tuple(iogrp_map.split(':'))
+                self.active_active_iogrp_map[primary] = second
+            LOG.debug("aa iogrp map: %s", self.active_active_iogrp_map)
+
+        assistant = InStorageAssistant(self._run_ssh,
+                                       self.active_active_pool_map,
+                                       self.active_active_iogrp_map)
+
+        self._local_backend_assistant = assistant
         self._aux_backend_assistant = None
         self._assistant = self._local_backend_assistant
         self._vdiskcopyops = {}
@@ -420,6 +458,16 @@ class InStorageMCSCommonDriver(san.SanDriver, driver.VolumeDriver):
                  {'old': self.inactive_ip,
                   'new': self.active_ip})
         return True
+
+    def get_site_name(self):
+        """Get the site name available."""
+        # when not setup site configure, the site_name of node info is '',
+        # so the return value will be ''
+        site_names = set()
+        for node_id, node in self._state['storage_nodes'].items():
+            site_names.add(node['site_name'])
+
+        return list(site_names)[0]
 
     def ensure_export(self, ctxt, volume):
         """Check that the volume exists on the storage."""
@@ -1764,9 +1812,11 @@ class InStorageAssistant(object):
                                      'param': 'rate',
                                      'type': int}}
 
-    def __init__(self, run_ssh):
+    def __init__(self, run_ssh, pool_map=None, iogrp_map=None):
         self.ssh = InStorageSSH(run_ssh)
         self.check_lcmapping_interval = 3
+        self.pool_map = pool_map
+        self.iogrp_map = iogrp_map
 
     @staticmethod
     def handle_keyerror(cmd, out):
@@ -1820,6 +1870,7 @@ class InStorageAssistant(object):
                 node['name'] = node_data['name']
                 node['IO_group'] = node_data['IO_group_id']
                 node['iscsi_name'] = node_data['iscsi_name']
+                node['site_name'] = node_data['site_name']
                 node['WWNN'] = node_data['WWNN']
                 node['status'] = node_data['status']
                 node['WWPN'] = []
@@ -2049,7 +2100,7 @@ class InStorageAssistant(object):
         LOG.debug('Leave: get_host_from_connector: host %s.', host_name)
         return host_name
 
-    def create_host(self, connector):
+    def create_host(self, connector, site_name=''):
         """Create a new host on the storage system.
 
         We create a host name and associate it with the given connection
@@ -2099,7 +2150,7 @@ class InStorageAssistant(object):
 
         # Create a host with one port
         port = ports.pop(0)
-        self.ssh.mkhost(host_name, port[0], port[1])
+        self.ssh.mkhost(host_name, port[0], port[1], site_name)
 
         # Add any additional ports to the host
         for port in ports:
@@ -2186,6 +2237,7 @@ class InStorageAssistant(object):
                'compression': config.instorage_mcs_vol_compression,
                'intier': config.instorage_mcs_vol_intier,
                'iogrp': config.instorage_mcs_vol_iogrp,
+               'aa': config.instorage_mcs_enable_aa,
                'qos': None,
                'replication': False}
         return opt
@@ -2398,11 +2450,42 @@ class InStorageAssistant(object):
         params.extend(['-intier', intier])
         return params
 
+    @staticmethod
+    def _get_volume_create_params(opts):
+        if opts['rsize'] == -1:
+            params = []
+        else:
+            params = ['-buffersize', '%s%%' % str(opts['rsize']),
+                      '-warning', '%s%%' % str(opts['warning'])]
+
+            if not opts['autoexpand']:
+                params.append('-noautoexpand')
+
+            if opts['compression']:
+                params.append('-compressed')
+            else:
+                params.append('-thin')
+                params.extend(['-grainsize', str(opts['grainsize'])])
+
+        return params
+
     def create_vdisk(self, name, size, units, pool, opts):
         name = '"%s"' % name
         LOG.debug('Enter: create_vdisk: vdisk %s.', name)
-        params = self._get_vdisk_create_params(opts)
-        self.ssh.mkvdisk(name, size, units, pool, opts, params)
+
+        if opts['aa']:
+            LOG.debug('we will create an active-active volume')
+            # create an active-active volume
+            params = self._get_volume_create_params(opts)
+            poollist = '%s:%s' % (pool, self.pool_map[pool])
+            iogrp = '%s' % opts['iogrp']
+            iogrplist = '%s:%s' % (iogrp, self.iogrp_map[iogrp])
+            self.ssh.mkvolume(name, size, units, poollist, iogrplist, opts, params)
+        else:
+            LOG.debug('we will create a general volume')
+            params = self._get_vdisk_create_params(opts)
+            self.ssh.mkvdisk(name, size, units, pool, opts, params)
+
         LOG.debug('Leave: _create_vdisk: volume %s.', name)
 
     def delete_vdisk(self, vdisk, force):
@@ -2411,10 +2494,20 @@ class InStorageAssistant(object):
         if not self.is_vdisk_defined(vdisk):
             LOG.info(_('Tried to delete non-existent vdisk %s.'), vdisk)
             return
-        self.ensure_vdisk_no_lc_mappings(vdisk, allow_snaps=True,
-                                         allow_lctgt=True)
-        self.ssh.rmvdisk(vdisk, force=force)
+
+        if self.is_aa_vdisk(vdisk):
+            LOG.debug('Remove active-active volume')
+            self.ssh.rmvolume(vdisk, force=force)
+        else:
+            LOG.debug('Remove general vdisk')
+            self.ensure_vdisk_no_lc_mappings(vdisk, allow_snaps=True,
+                                             allow_lctgt=True)
+            self.ssh.rmvdisk(vdisk, force=force)
         LOG.debug('Leave: delete_vdisk: vdisk %s.', vdisk)
+
+    def is_aa_vdisk(self, vdisk_name):
+        attrs = self.ssh.lsvdisks_from_filter('volume_name', vdisk_name)
+        return True if len(attrs) == 4 else False
 
     def is_vdisk_defined(self, vdisk_name):
         """Check if vdisk is defined."""
@@ -2424,6 +2517,13 @@ class InStorageAssistant(object):
     def get_vdisk_attributes(self, vdisk):
         attrs = self.ssh.lsvdisk(vdisk)
         return attrs
+
+    def get_volume_iogrps(self, volume_name):
+        attrs = self.ssh.lsvdisks_from_filter('volume_name', volume_name)
+        iogrps = set()
+        for attr in attrs:
+            iogrps.add(attr['IO_group_id'])
+        return iogrps
 
     def find_vdisk_copy_id(self, vdisk, pool):
         resp = self.ssh.lsvdiskcopy(vdisk)
@@ -3290,10 +3390,12 @@ class InStorageSSH(object):
         port.append(port_name)
         return port
 
-    def mkhost(self, host_name, port_type, port_name):
+    def mkhost(self, host_name, port_type, port_name, site=''):
         port = self._create_port_arg(port_type, port_name)
         ssh_cmd = ['mcsop', 'mkhost', '-force'] + port
         ssh_cmd += ['-name', '"%s"' % host_name]
+        if site:
+            ssh_cmd += ['-site', '"%s"' % site] 
         return self.run_ssh_check_created(ssh_cmd)
 
     def addhostport(self, host, port_type, port_name):
@@ -3413,6 +3515,19 @@ class InStorageSSH(object):
         ssh_cmd = ['mcsop', 'rmhost', '"%s"' % host]
         self.run_ssh_assert_no_output(ssh_cmd)
 
+    def mkvolume(self, name, size, units, poollist, ipgrplist, opts, params):
+        ssh_cmd = ['mcsop', 'mkvolume', '-name', name,
+                   '-size', size, '-unit', units,
+                   '-iogrp', six.text_type(ipgrplist),
+                   '-pool', poollist] + params
+
+        try:
+            return self.run_ssh_check_created(ssh_cmd)
+        except Exception as ex:
+            with excutils.save_and_reraise_exception():
+                LOG.exception(_('Failed to create vdisk %(vol)s.'),
+                              {'vol': name})
+
     def mkvdisk(self, name, size, units, pool, opts, params):
         ssh_cmd = ['mcsop', 'mkvdisk', '-name', name, '-mdiskgrp',
                    '"%s"' % pool, '-iogrp', six.text_type(opts['iogrp']),
@@ -3431,6 +3546,14 @@ class InStorageSSH(object):
             with excutils.save_and_reraise_exception():
                 LOG.exception(_('Failed to create vdisk %(vol)s.'),
                               {'vol': name})
+
+    def rmvolume(self, vdisk, force=True):
+        ssh_cmd = ['mcsop', 'rmvolume']
+        if force:
+            ssh_cmd += ['-removehostmappings', '-removercrelationships',
+                        '-removelcmaps', '-discardimage', '-cancelbackup']
+        ssh_cmd += ['"%s"' % vdisk]
+        self.run_ssh_assert_no_output(ssh_cmd)
 
     def rmvdisk(self, vdisk, force=True):
         ssh_cmd = ['mcsop', 'rmvdisk']

@@ -134,7 +134,8 @@ class InStorageMCSFCDriver(instorage_common.InStorageMCSCommonDriver,
         host_name = self._assistant.get_host_from_connector(connector)
         if host_name is None:
             # Host does not exist - add a new host to InStorage/MCS
-            host_name = self._assistant.create_host(connector)
+            host_name = self._assistant.create_host(connector,
+                                                    self.get_site_name())
 
         volume_attributes = self._assistant.get_vdisk_attributes(volume_name)
         if volume_attributes is None:
@@ -177,19 +178,21 @@ class InStorageMCSFCDriver(instorage_common.InStorageMCSCommonDriver,
                 LOG.warning(_('initialize_connection: Did not find a '
                               'preferred node for volume %s.'), volume_name)
 
+            io_groups = self._assistant.get_volume_iogrps(volume_name)
+
             properties = {}
             properties['target_discovered'] = False
             properties['target_lun'] = lun_id
             properties['volume_id'] = volume['id']
 
-            conn_wwpns = self._assistant.get_conn_fc_wwpns(host_name)
+            visible_wwpns = self._assistant.get_conn_fc_wwpns(host_name)
 
-            # If conn_wwpns is empty, then that means that there were
-            # no target ports with visibility to any of the initiators
-            # so we return all target ports.
-            if len(conn_wwpns) == 0:
-                for node in self._state['storage_nodes'].values():
-                    conn_wwpns.extend(node['WWPN'])
+            available_wwpns = [] 
+            for node in self._state['storage_nodes'].values():
+                if node['IO_group'] not in io_groups:
+                    continue
+                available_wwpns.extend(node['WWPN'])
+            conn_wwpns = list(set(visible_wwpns) & set(available_wwpns))
 
             properties['target_wwn'] = conn_wwpns
 
