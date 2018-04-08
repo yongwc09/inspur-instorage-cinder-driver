@@ -134,8 +134,8 @@ class InStorageMCSFCDriver(instorage_common.InStorageMCSCommonDriver,
         host_name = self._assistant.get_host_from_connector(connector)
         if host_name is None:
             # Host does not exist - add a new host to InStorage/MCS
-            host_name = self._assistant.create_host(connector,
-                                                    self.get_site_name())
+            site = self._assistant.get_volume_prefer_site_name(volume_name)
+            host_name = self._assistant.create_host(connector, site)
 
         volume_attributes = self._assistant.get_vdisk_attributes(volume_name)
         if volume_attributes is None:

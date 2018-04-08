@@ -146,8 +146,8 @@ class InStorageMCSISCSIDriver(instorage_common.InStorageMCSCommonDriver,
         host_name = self._assistant.get_host_from_connector(connector)
         if host_name is None:
             # Host does not exist - add a new host to InStorage/MCS
-            host_name = self._assistant.create_host(connector,
-                                                    self.get_site_name())
+            site = self._assistant.get_volume_prefer_site_name(volume_name)
+            host_name = self._assistant.create_host(connector, site)
 
         chap_secret = self._assistant.get_chap_secret_for_host(host_name)
         chap_enabled = self.configuration.instorage_mcs_iscsi_chap_enabled

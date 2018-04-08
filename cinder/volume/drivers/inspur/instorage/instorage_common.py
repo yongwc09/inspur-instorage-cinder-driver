@@ -460,7 +460,9 @@ class InStorageMCSCommonDriver(san.SanDriver, driver.VolumeDriver):
         return True
 
     def get_site_name(self):
-        """Get the site name available."""
+        """
+        Get the site name available.
+        """
         # when not setup site configure, the site_name of node info is '',
         # so the return value will be ''
         site_names = set()
@@ -2524,6 +2526,25 @@ class InStorageAssistant(object):
         for attr in attrs:
             iogrps.add(attr['IO_group_id'])
         return iogrps
+
+    def get_volume_prefer_site_name(self, volume_name):
+        site_name = ''
+        prefer_iogrp_name = None
+
+        attrs = self.ssh.lsvdisks_from_filter('volume_name', volume_name)
+        for attr in attrs:
+            if attr['function'] == 'master':
+                prefer_iogrp_name = attr['IO_group_name']
+                break
+        if prefer_iogrp_name is None:
+            return site_name
+
+        iogrps = self.ssh.lsiogrp()
+        for iogrp in iogrps:
+            if iogrp['name'] == prefer_iogrp_name:
+                site_name = iogrp['site_name']
+                break
+        return site_name
 
     def find_vdisk_copy_id(self, vdisk, pool):
         resp = self.ssh.lsvdiskcopy(vdisk)
