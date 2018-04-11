@@ -54,11 +54,15 @@ else:
     from oslo_utils import excutils
 
 # TODO !!!ATTENTION
-# from Mitaka, lock from coordination is used instead of utils
-if DRIVER_RUN_VERSION <= 'LIBERTY':
+# from Ocata, lock from coordination is used instead of utils
+if DRIVER_RUN_VERSION <= 'NEWTON':
     from cinder import utils as coordination
+    def synchronized_lock(lockname):
+        return coordination.synchronized(lockname, external=True)
 else:
     from cinder import coordination
+    def synchronized_lock(lockname):
+        return coordination.synchronized(lockname)
 
 from cinder import exception
 from cinder.i18n import _
@@ -102,9 +106,8 @@ class InStorageMCSFCDriver(instorage_common.InStorageMCSCommonDriver,
     @fczm_utils_add_fc_zone # from Ocata, the add_fc_zone is used instead of AddFCZone
     def initialize_connection(self, volume, connector):
         """Perform necessary work to make a FC connection."""
-        @coordination.synchronized('instorage-host' +
-                                   self._state['system_id'] +
-                                   connector['host'])
+        @synchronized_lock('instorage-host' + self._state['system_id']
+                           + connector['host'])
         def _do_initialize_connection_locked():
             return self._do_initialize_connection(volume, connector)
         return _do_initialize_connection_locked()
@@ -235,8 +238,7 @@ class InStorageMCSFCDriver(instorage_common.InStorageMCSCommonDriver,
         # so that all the fake connectors to an MCS are serialized
         host = connector['host'] if 'host' in connector else ""
 
-        @coordination.synchronized('instorage-host' +
-                                   self._state['system_id'] + host)
+        @synchronized_lock('instorage-host' + self._state['system_id'] + host)
         def _do_terminate_connection_locked():
             return self._do_terminate_connection(volume, connector,
                                                  **kwargs)
