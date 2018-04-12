@@ -12,10 +12,11 @@ Juno版本到Queens版本OpenStack驱动部分变化影响
 	3. create_export函数增加了connector参数
 - Liberty -> Mitaka
 	1. 增加 cinder/opts.py 文件，需要在opts.py文件中增加存储参数相关模块导入
-        2. 增加 cinder/coordination.py 文件，FC, iSCSI驱动中的synchronized锁由utils.py中定义改为使用coordination.py中的定义
+	2. 增加 cinder/coordination.py 文件，但是该文件中synchronized锁需要其他操作，暂时不使用。
 - Mitaka -> Newton
 - Newton -> Ocata
 	1. AddFCZone修饰符名称改为add_fc_zone
+	2. FC, iSCSI驱动中的synchronized锁由utils.py中定义改为使用coordination.py中的定义
 
 使用说明
 --------
