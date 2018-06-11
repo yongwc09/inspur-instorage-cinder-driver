@@ -3416,7 +3416,7 @@ class InStorageSSH(object):
         ssh_cmd = ['mcsop', 'mkhost', '-force'] + port
         ssh_cmd += ['-name', '"%s"' % host_name]
         if site:
-            ssh_cmd += ['-site', '"%s"' % site] 
+            ssh_cmd += ['-site', '"%s"' % site]
         return self.run_ssh_check_created(ssh_cmd)
 
     def addhostport(self, host, port_type, port_name):

@@ -190,7 +190,7 @@ class InStorageMCSFCDriver(instorage_common.InStorageMCSCommonDriver,
 
             visible_wwpns = self._assistant.get_conn_fc_wwpns(host_name)
 
-            available_wwpns = [] 
+            available_wwpns = []
             for node in self._state['storage_nodes'].values():
                 if node['IO_group'] not in io_groups:
                     continue
