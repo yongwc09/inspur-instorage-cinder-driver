@@ -46,6 +46,8 @@ Juno版本到Queens版本OpenStack驱动部分变化影响
    ```
    其中 InStorage_OCATA_cinder 即为目标OpenStack版本对应的InStorage驱动文件包。将目录中驱动文件拷贝到指定位置即可。
 
+   针对双活场景下的配置，请参考doc目录下的support-for-active-active.md文档。
+
 安装与使用该驱动
 ----------------
 1. 执行 ./mkpackage.sh -t X 生成X版本OpenStack对应的驱动包。X 为 OpenStack 对应版本首字母。
@@ -64,8 +66,8 @@ Juno版本到Queens版本OpenStack驱动部分变化影响
 
    a. Cinder服务配置 /etc/cinder/cinder.conf
       ```
-      #修改enable_backends配置,增加INSTORAGE
-      enable_backends=[OTHERS],INSTORAGE
+      #修改enabled_backends配置,增加INSTORAGE
+      enabled_backends=[OTHERS],INSTORAGE
 
       #增加存储后端，FC或者iSCSI方式连接
 
